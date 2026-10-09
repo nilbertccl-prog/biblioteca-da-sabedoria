@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Health check endpoint for connection test
+    match /test/connection {
+      allow read: if true;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function isValidUserProfile(data) {
+      return (!('email' in data) || (data.email is string && data.email.size() <= 320)) &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 256)) &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 2048)) &&
+        (!('dailyGoalMinutes' in data) || (data.dailyGoalMinutes is number)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidUserBookProgress(data) {
+      return (!('bookId' in data) || (data.bookId is string && data.bookId.size() <= 128)) &&
+        (!('currentUnit' in data) || data.currentUnit is number) &&
+        (!('isCompleted' in data) || data.isCompleted is bool) &&
+        (!('totalUnits' in data) || data.totalUnits is number) &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 500)) &&
+        (!('author' in data) || (data.author is string && data.author.size() <= 500)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 50000)) &&
+        (!('rating' in data) || data.rating is number) &&
+        (!('completedDate' in data) || (data.completedDate is string && data.completedDate.size() <= 64)) &&
+        (!('readingType' in data) || (data.readingType is string && data.readingType.size() <= 64)) &&
+        (!('recommendation' in data) || (data.recommendation is string && data.recommendation.size() <= 128)) &&
+        (!('type' in data) || (data.type is string && data.type.size() <= 32)) &&
+        (!('url' in data) || (data.url is string && data.url.size() <= 2048)) &&
+        (!('isCustom' in data) || data.isCustom is bool) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidReadingLog(data) {
+      return (!('date' in data) || (data.date is string && data.date.size() <= 32)) &&
+        (!('bookId' in data) || (data.bookId is string && data.bookId.size() <= 128)) &&
+        (!('units' in data) || data.units is number) &&
+        (!('type' in data) || (data.type is string && data.type.size() <= 32)) &&
+        (!('timestamp' in data) || data.timestamp is number);
+    }
+
+    function isValidPomodoroLog(data) {
+      return (!('date' in data) || (data.date is string && data.date.size() <= 32)) &&
+        (!('seconds' in data) || data.seconds is number) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    // User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Users cannot list other user profiles
+      allow create, update: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow delete: if isOwner(userId);
+
+      // Books subcollection
+      match /books/{bookId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(bookId) && isValidUserBookProgress(request.resource.data);
+        allow delete: if isOwner(userId) && isValidId(bookId);
+      }
+
+      // Reading logs subcollection
+      match /readingLogs/{logId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(logId) && isValidReadingLog(request.resource.data);
+        allow delete: if isOwner(userId) && isValidId(logId);
+      }
+
+      // Pomodoro logs subcollection
+      match /pomodoroLogs/{dateId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(dateId) && isValidPomodoroLog(request.resource.data);
+        allow delete: if isOwner(userId) && isValidId(dateId);
+      }
+    }
+  }
+}

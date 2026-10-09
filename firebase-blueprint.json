@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile and personal preferences",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "maxLength": 256 },
+        "email": { "type": "string", "maxLength": 320 },
+        "photoURL": { "type": "string", "maxLength": 2048 },
+        "dailyGoalMinutes": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "UserBookProgress": {
+      "title": "UserBookProgress",
+      "description": "Individual reading progress, custom book metadata, rating and notes",
+      "type": "object",
+      "properties": {
+        "bookId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 500 },
+        "author": { "type": "string", "maxLength": 500 },
+        "type": { "type": "string", "maxLength": 32 },
+        "url": { "type": "string", "maxLength": 2048 },
+        "totalUnits": { "type": "number" },
+        "currentUnit": { "type": "number" },
+        "isCompleted": { "type": "boolean" },
+        "completedDate": { "type": "string", "maxLength": 64 },
+        "rating": { "type": "number" },
+        "readingType": { "type": "string", "maxLength": 64 },
+        "recommendation": { "type": "string", "maxLength": 128 },
+        "notes": { "type": "string", "maxLength": 50000 },
+        "isCustom": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ReadingLog": {
+      "title": "ReadingLog",
+      "description": "Daily reading activity delta entry",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "maxLength": 32 },
+        "bookId": { "type": "string", "maxLength": 128 },
+        "units": { "type": "number" },
+        "type": { "type": "string", "maxLength": 32 },
+        "timestamp": { "type": "number" }
+      }
+    },
+    "PomodoroLog": {
+      "title": "PomodoroLog",
+      "description": "Daily focus seconds logged by the Pomodoro timer",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "maxLength": 32 },
+        "seconds": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Private user account profile and settings"
+    },
+    "/users/{userId}/books/{bookId}": {
+      "schema": "UserBookProgress",
+      "description": "User specific book progress, ratings and notes"
+    },
+    "/users/{userId}/readingLogs/{logId}": {
+      "schema": "ReadingLog",
+      "description": "User daily reading delta logs for statistics"
+    },
+    "/users/{userId}/pomodoroLogs/{dateId}": {
+      "schema": "PomodoroLog",
+      "description": "User daily pomodoro focus tracking"
+    }
+  }
+}
